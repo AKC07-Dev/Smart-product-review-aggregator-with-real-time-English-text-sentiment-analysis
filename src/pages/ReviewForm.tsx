@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,9 +21,17 @@ const reviewSchema = z.object({
 
 type ReviewFormData = z.infer<typeof reviewSchema>;
 
+// Map backend sentiment to user-friendly label
+const sentimentLabels: { [key: string]: string } = {
+  good: 'Positive',
+  bad: 'Negative',
+  neutral: 'Neutral',
+};
+
 const ReviewForm = () => {
   const [submitted, setSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState<ReviewFormData | null>(null);
+  const [sentimentResult, setSentimentResult] = useState<string>('');
   const [hoveredStar, setHoveredStar] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
 
@@ -36,12 +45,32 @@ const ReviewForm = () => {
     resolver: zodResolver(reviewSchema),
   });
 
-  const onSubmit = (data: ReviewFormData) => {
+  const onSubmit = async (data: ReviewFormData) => {
     setSubmittedData(data);
     setSubmitted(true);
+    setSentimentResult(''); // reset previous
+
+    try {
+      const response = await axios.post(
+        'https://english-text-sentiment-analysis-stage-2-1.onrender.com/save-review',
+        {
+          name: data.name,
+          email: data.email,
+          productName: data.productName,
+          rating: data.rating,
+          reviewText: data.reviewText,
+        }
+      );
+      // Show more user-friendly sentiment label if present
+      setSentimentResult(sentimentLabels[response.data.sentiment] || response.data.sentiment);
+    } catch (error) {
+      setSentimentResult('Error: Could not save review.');
+    }
+
     setTimeout(() => {
       reset();
       setSelectedRating(0);
+      setSubmitted(false); // Also hide success card after reset
     }, 5000);
   };
 
@@ -53,7 +82,6 @@ const ReviewForm = () => {
   return (
     <div className="min-h-screen gradient-subtle">
       <Header />
-      
       <main className="container mx-auto px-4 pt-32 pb-16">
         <div className="max-w-2xl mx-auto animate-fade-in-up">
           <div className="text-center mb-8">
@@ -62,7 +90,6 @@ const ReviewForm = () => {
               Your feedback helps us improve and helps others make better decisions
             </p>
           </div>
-
           <Card className="shadow-medium border-0">
             <CardHeader>
               <CardTitle>Review Form</CardTitle>
@@ -82,7 +109,6 @@ const ReviewForm = () => {
                     <p className="text-sm text-destructive">{errors.name.message}</p>
                   )}
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
@@ -96,7 +122,6 @@ const ReviewForm = () => {
                     <p className="text-sm text-destructive">{errors.email.message}</p>
                   )}
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="productName">Product Name</Label>
                   <Input
@@ -109,7 +134,6 @@ const ReviewForm = () => {
                     <p className="text-sm text-destructive">{errors.productName.message}</p>
                   )}
                 </div>
-
                 <div className="space-y-2">
                   <Label>Rating</Label>
                   <div className="flex gap-2">
@@ -136,7 +160,6 @@ const ReviewForm = () => {
                     <p className="text-sm text-destructive">{errors.rating.message}</p>
                   )}
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="reviewText">Your Review</Label>
                   <Textarea
@@ -150,7 +173,6 @@ const ReviewForm = () => {
                     <p className="text-sm text-destructive">{errors.reviewText.message}</p>
                   )}
                 </div>
-
                 <Button type="submit" variant="hero" size="lg" className="w-full">
                   Submit Review
                 </Button>
@@ -168,11 +190,10 @@ const ReviewForm = () => {
                   <div className="flex-1">
                     <h3 className="text-2xl font-bold mb-2">Thank you, {submittedData.name}!</h3>
                     <p className="text-muted-foreground mb-4">Your review has been submitted successfully.</p>
-                    
                     <div className="bg-secondary/50 rounded-lg p-4 space-y-2">
                       <p className="text-sm"><strong>Product:</strong> {submittedData.productName}</p>
                       <p className="text-sm flex items-center gap-2">
-                        <strong>Rating:</strong> 
+                        <strong>Rating:</strong>{' '}
                         <span className="flex">
                           {Array.from({ length: submittedData.rating }).map((_, i) => (
                             <Star key={i} className="w-4 h-4 fill-accent text-accent" />
@@ -180,6 +201,11 @@ const ReviewForm = () => {
                         </span>
                       </p>
                       <p className="text-sm"><strong>Review:</strong> {submittedData.reviewText}</p>
+                      {sentimentResult && (
+                        <p className="text-sm">
+                          <strong>Sentiment:</strong> {sentimentResult}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
