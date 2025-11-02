@@ -18,7 +18,7 @@ const Landing = () => {
             </div>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent gradient-hero">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 p-3 bg-clip-text  gradient-hero">
             Welcome to Review Platform
           </h1>
           
