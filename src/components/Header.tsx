@@ -15,7 +15,7 @@ const Header = () => {
           <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-soft">
             <span className="text-white font-bold text-xl">R</span>
           </div>
-          <span className="text-xl font-bold">Review Platform</span>
+          <span className="text-xl font-bold">Smart Product Review Aggregator with Real-Time English Sentiment Analysis</span>
         </div>
         
         <div className="flex items-center gap-2">
